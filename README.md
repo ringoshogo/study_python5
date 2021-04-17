@@ -2,7 +2,7 @@
 
 
 # 開始方法
-pip install -r requirements.txt
+pip install -r requirements.txt<br>
 python view.py
 
 # １
