@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+    <head>
+        <title>商品購入</title>
+    <!-- JqueryのJS読み込み -->
+    <script src="static/js/jquery.min.js"></script>
+    <!-- BootstrapのCSS読み込み -->
+    <link href="static/css/bootstrap.css" rel="stylesheet"><link rel="stylesheet" href="./style.css">
+    <!-- BootstrapのJS読み込み -->
+    <script src="static/js/bootstrap.min.js"></script>
+    <!-- vueのJS読込 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script> 
+    </head>
+    <body>
+    <!-- 全体 -->
+    <div id="body" class="mx-auto">
+        <!-- モーダル -->
+        <div class="modal fade" data-keyboard="false" data-backdrop="static" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <!-- モーダル画面のヘッダ -->
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">精算</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <!-- モーダル画面のボディ -->
+                    <div class="modal-body">
+                        <label>お預かり金額</label> 
+                        <input id="received_money" v-model="receivedMoney" class="form-control m-1" type="number" value="" placeholder="お預かり金額">
+                        <button type="button" class="col-sm-2 m-1 btn btn-success" data-dismiss="modal" @click="submit">精算</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 購入商品選択コンテナ -->
+        <div class="container">
+            <h2 class="jumbotron-heading pt-2">購入商品</h2>
+        </div>
+        <div class="container shadow p-3 mb-3 bg-white rounded">
+            <h5 class="jumbotron-heading">商品選択</h5>
+            <div  id="header" class="form-row justify-content-center">
+                <!-- 商品コード -->
+                <div class="col-sm-2 m-1">
+                    <label>商品コード</label> 
+                    <div>
+                        <select v-model="selected" class="custom-select mr-sm-2">
+                            <!-- valueをobjectにすれば操作しやすい -->
+                            <option v-for="(item, index) in items" :key="index" v-bind:value="item">
+                                {{item.code}}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <!-- 商品名 -->
+                <div class="col-sm-3 m-1">
+                    <label>商品名</label> 
+                    <div>
+                        <label>
+                            {{ selected.name}}
+                        </label>
+                    </div>
+                </div>
+                <!-- 個数 -->
+                <div class="col-sm-2 m-1">
+                    <label>購入数量</label> 
+                    <div>
+                        <input v-model="amount" id="item_buy_amount" class="form-control" type="number">
+                    </div>
+                </div>
+                <!-- 金額 -->
+                <div class="col-sm-2 m-1">
+                    <label>購入金額</label> 
+                    <div>
+                        <label>
+                            {{ selected.price * amount}}円
+                        </label>
+                    </div>
+                </div>
+                <!-- 選択ボタン -->
+                <div class="col-sm-1 m-1 p-0 align-bottom">
+                    <label class="invisible">選択</label>
+                    <div>
+                        <button type="button"class="btn btn-primary" @click="addSelectedItem">選択</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 商品の購入と削除 -->
+        <div class="container mb-3">
+            <div class="form-row justify-content-end">
+                <label class="col-sm-4 d-flex align-items-end">合計 {{totalPrice}} 円</label>
+                <button type="button" class="col-sm-2 m-1 btn btn-success" data-toggle="modal" data-target="#paymentModal">購入</button>
+                <button type="button" class="col-sm-2 m-1 btn btn-danger" @click="deleteSelectedItem">削除</button>
+            </div>
+        </div>
+        <!-- 選択済の商品一覧 -->
+        <div class="container shadow p-3 mb-3 bg-white rounded">
+                <label class="col-sm-2 text-center">選択</label>
+                <label class="col-sm-3 text-center">商品名</label>
+                <label class="col-sm-3 text-center">購入数量</label>
+                <label class="col-sm-2 text-center">金額</label>
+            <div v-for="(item, index) in selectedItems" :key="index">
+                <input class="col-sm-2 text-center" type="checkbox" :value="index" v-model="deleteItems">
+                <label class="col-sm-3 text-center">{{ item.name }}</label>
+                <label class="col-sm-3 text-center">{{ item.amount }}</label>
+                <label class="col-sm-2 text-center">{{ item.price }}</label>
+            </div>
+        </div>
+    </div>
+
+        <script type="text/javascript" src="./eel.js"></script>
+        <script src="srcipt.js"></script>
+        <script>
+
+            // 選択済の商品
+            const selectedItem = new Vue({
+                el: "#body",
+                data() {
+                    return {
+                        selected: "",
+                        items: [],
+                        amount: 1,
+                        deleteItems: [], // 例) 1, 3, 5
+                        selectedItems:[], //code, name, price, amount
+                        totalPrice:0,
+                        receivedMoney: 0
+                    }
+                },
+                mounted: async function() {
+                    this.items = await eel.get_item_list()();
+                    this.selected = this.items[0];
+                },
+                methods: {
+                    // インデックスの要素をリストから削除する
+                    deleteSelectedItem: function() {
+                        this.selectedItems = this.selectedItems.filter((elem, index) => this.deleteItems.indexOf(index) === -1)
+                        this.totalPrice = this.selectedItems.reduce((acc, cur) => acc + cur.price, 0)
+                        this.deleteItems = [];
+                    },
+                    // アイテムを選択済リストに追加する
+                    addSelectedItem: function() {
+                        // 1個以上の数量指定がなければ何もしない
+                        if (this.amount < 1) return
+                        const totalPrice = this.selected.price * this.amount
+                        this.selectedItems.push({...this.selected, price:totalPrice ,amount: this.amount});
+                        this.totalPrice = this.selectedItems.reduce((acc, cur) => acc + cur.price, 0)
+                        this.amount = 1;
+                    },
+                    // 精算する
+                    submit() {
+                        // 商品が選択されていない場合
+                        if (this.totalPrice < 1) {
+                            alert("商品が選択されておりません。")
+                            $('#paymentModal').modal('hide')
+                            return
+                        }
+                        const rest = this.receivedMoney - this.totalPrice
+                        // おつりの計算を行う
+                        if (rest >= 0) {
+                            alert("おつりは"+rest+"円です。お買い上げ有難う御座いました。")
+                            eel.write_log(this.receivedMoney, this.selectedItems)
+                            this.selectedItems = [], //code, name, price, amount
+                            this.totalPrice = 0,
+                            this.receivedMoney = 0
+                            this.amount = 1
+                            $('#paymentModal').modal('hide')
+                        }else {
+                            const shortOf = -rest
+                            alert("金額が"+shortOf+"円不足しております。")
+
+                        }
+                    }
+                }
+
+            });
+
+        </script>
+    </body>
+</html>

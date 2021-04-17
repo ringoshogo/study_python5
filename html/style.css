@@ -1,0 +1,11 @@
+.main {
+    display: flex;
+    flex-flow: column;
+    justify-content: flex-start;
+}
+
+/* 課題5 */
+.body textarea {
+    width: 200px;
+    height: 300px
+}
